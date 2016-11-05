@@ -110,7 +110,7 @@ else
 		uploadToPgyer $ipa_path $pgyerUKey $pgyerApiKey $pgyPassword 
 		while [[ $result == '' ]]
 		do
-			read -p "是否上传，是否重新上传到蒲公英?(y/n)" reUploadToPgyer
+			read -p "上传失败，是否重新上传到蒲公英?(y/n)" reUploadToPgyer
 			if [[ $reUploadToPgyer = "y" ]] ; then
 				uploadToPgyer $ipa_path $pgyerUKey $pgyerApiKey $pgyPassword
 			else
