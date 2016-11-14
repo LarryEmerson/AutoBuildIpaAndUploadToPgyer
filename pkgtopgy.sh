@@ -14,13 +14,49 @@ uploadToPgyer()
 }
 
 tempPath="$(pwd)" 
-read -p "请确认当前目录为项目根目录：${tempPath}?(y/n)" checkPath
-if [[ $checkPath = "y" ]] ; then
-	project_path=$tempPath
-else
-	read -p "请输入项目目录的绝对路径:" inputPath
-	project_path=$inputPath
+if [ ! -f pkgtopgy_path.config ] ; then 
+	touch pkgtopgy_path.config
 fi
+
+lines=`sed -n '$=' pkgtopgy_path.config` 
+
+if [[ $lines == '' ]]; then
+	lines=0
+fi  
+
+echo "请选择你需要打包的目录："
+for i in `cat pkgtopgy_path.config `
+do
+	echo  $((++no)) ":" $i
+done
+echo  $((++no)) ":" "${tempPath}"
+	
+echo "若没有符合需求的路径，请直接回车"
+read -p "你的选择是：" pathselection
+if [[ $pathselection >0 ]] && [[ $pathselection -le `expr $lines+1` ]] ; then
+	if [[ $pathselection -le $lines ]] ; then
+		project_path=`sed -n ${pathselection}p pkgtopgy_path.config` 
+	else 
+		echo "已选目录：${tempPath}" 
+		read -p "请确认上述已选目录：(y/n)" checkPath
+		if [[ $checkPath = "y" ]] ; then
+			project_path=$tempPath
+		fi
+	fi 
+else
+	echo "未找到合适的路径"
+fi	
+
+if [[ $project_path == '' ]]; then 
+	read -p "请手动输入打包工程的绝对路径:" inputPath
+	project_path=$inputPath
+	if [[ $project_path != '' ]]; then 
+		echo $project_path >> pkgtopgy_path.config
+		cat pkgtopgy_path.config
+	fi
+fi
+
+
 if [[ -d "$project_path" ]]; then
 	echo "当前路径为：" $project_path
 else
