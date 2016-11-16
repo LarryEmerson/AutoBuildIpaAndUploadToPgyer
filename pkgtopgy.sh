@@ -5,37 +5,44 @@
 result=''
 uploadToPgyer()
 {
-	echo "params" 
+	echo "蒲公英上传配置：" 
 	echo "ipa路径:  " $1
 	echo "UserKey: " $2
 	echo "ApiKey:  " $3
 	echo "Password:" $4
+	
 	result=$(curl -F "file=@$1" -F "uKey=$2" -F "_api_key=$3" -F "publishRange=2" -F "isPublishToPublic=2" -F "password=$4" 'https://www.pgyer.com/apiv1/app/upload' | json-query data.appShortcutUrl)
 }
 
 tempPath="$(pwd)" 
-if [ ! -f pkgtopgy_path.config ] ; then 
-	touch pkgtopgy_path.config
+pathConfig="${tempPath}/pkgtopgy_path.config"
+pgyConfig="${tempPath}/pgyer.config"
+#判定并创建历史打包目录配置文件
+if [ ! -f $pathConfig ] ; then 
+	touch $pathConfig
 fi
-
-lines=`sed -n '$=' pkgtopgy_path.config` 
+#判定并创建蒲公英配置文件
+if [ ! -f $pgyConfig ] ; then 
+	touch $pgyConfig
+fi
+#历史打包目录条数
+lines=`sed -n '$=' ${pathConfig}` 
 
 if [[ $lines == '' ]]; then
 	lines=0
 fi  
 
 echo "请选择你需要打包的目录："
-for i in `cat pkgtopgy_path.config `
+for i in `cat ${pathConfig} `
 do
 	echo  $((++no)) ":" $i
 done
 echo  $((++no)) ":" "${tempPath}"
-	
-echo "若没有符合需求的路径，请直接回车"
-read -p "你的选择是：" pathselection
+	 
+read -p "请选择打包目录(若无合适的目录请直接回车)：" pathselection
 if [[ $pathselection >0 ]] && [[ $pathselection -le `expr $lines+1` ]] ; then
 	if [[ $pathselection -le $lines ]] ; then
-		project_path=`sed -n ${pathselection}p pkgtopgy_path.config` 
+		project_path=`sed -n ${pathselection}p ${pathConfig}` 
 	else 
 		echo "已选目录：${tempPath}" 
 		read -p "请确认上述已选目录：(y/n)" checkPath
@@ -51,8 +58,8 @@ if [[ $project_path == '' ]]; then
 	read -p "请手动输入打包工程的绝对路径:" inputPath
 	project_path=$inputPath
 	if [[ $project_path != '' ]]; then 
-		echo $project_path >> pkgtopgy_path.config
-		cat pkgtopgy_path.config
+		echo $project_path >> ${pathConfig}
+		cat ${pathConfig}
 	fi
 fi
 
@@ -84,25 +91,75 @@ pgyerApiKey=''
 pgyerUKey=''
 pgyerApiKey=$(/usr/libexec/PlistBuddy -c "print LEPgyerApiKey" ${project_infoplist_path})
 pgyerUKey=$(/usr/libexec/PlistBuddy -c "print LEPgyerUKey" ${project_infoplist_path})
-pgyPassword=$(/usr/libexec/PlistBuddy -c "print LEPgyerPassword" ${project_infoplist_path})
+pgyerPassword=$(/usr/libexec/PlistBuddy -c "print LEPgyerPassword" ${project_infoplist_path})
 if [[ $pgyerUKey = '' ]] || [[ $pgyerApiKey = '' ]]; then
-	read -p "发现尚未配置蒲公英上传的apiKey及ukey,是否配置?(y/n)" checkConfig
-	if [[ $checkConfig = "y" ]] ; then
-		read -p "请输入蒲公英上传的apiKey:" apikey
-		pgyerApiKey=$apikey
-		read -p "请输入蒲公英上传的ukey:" ukey
-		pgyerUKey=$ukey
-	else
-		if [[ $pgyPassword = '' ]]; then
-			echo '发现蒲公英下载密码，未在工程项目的Info.plist配置，配置名称为LEPgyerPassword'
-		fi
-		read -p "是否继续打包?(y/n)" checkPkg
-		if [[ $checkPkg = "n" ]] ; then
-			exit
+	i=0
+	for line in `cat ${pgyConfig}`;
+	do 
+		pgy_line_array[i++]=$line
+	done
+	
+	lines=${#pgy_line_array[@]}  
+	if [[ $lines > 0 ]]; then 
+		echo "发现历史蒲公英配置："
+		no=0
+		for line in `cat ${pgyConfig}`;
+			do    
+			api=`echo ${line}|awk -F ',' '{print $1}'`
+			user=`echo ${line}|awk -F ',' '{print $2}'`
+			psw=`echo ${line}|awk -F ',' '{print $3}'`
+			name=`echo ${line}|awk -F ',' '{print $4}'`  
+			echo $((++no))"-别名：${name}" 
+			echo "    PgyApiKey: ${api} PgyUserKey: ${user} PgyerPassword: ${psw}"  
+		done
+		read -p "请选择蒲公英配置(若无合适的配置请直接回车)：" pgyindex
+		if [[ $pgyindex >0 ]] && [[ $pgyindex -le `expr $lines+1` ]] ; then
+			index=$(($pgyindex-1)) 
+			str=${pgy_line_array[$index]}  
+			pgyerApiKey=`echo ${str}|awk -F ',' '{print $1}'`
+			pgyerUKey=`echo ${str}|awk -F ',' '{print $2}'`
+			pgyerPassword=`echo ${str}|awk -F ',' '{print $3}'`
+			name=`echo ${str}|awk -F ',' '{print $4}'` 
+			echo "当前选择蒲公英配置:${name}"
+			echo "PgyApiKey: ${pgyerApiKey} PgyUserKey: ${pgyerUKey} PgyerPassword: ${pgyerPassword}" 
 		fi
 	fi
-fi
- 
+		
+	isCheckPgy=0
+	while [ $isCheckPgy == 0 ]
+	do 
+		if [[ $pgyerUKey = '' ]] || [[ $pgyerApiKey = '' ]]; then
+			read -p "发现尚未配置蒲公英上传的apiKey及ukey,是否配置?(y/n)" checkConfig
+			if [[ $checkConfig = "y" ]] ; then
+				read -p "请输入蒲公英上传的apiKey:" apikey
+				pgyerApiKey=$apikey
+				read -p "请输入蒲公英上传的ukey:" ukey
+				pgyerUKey=$ukey
+				if [[ $pgyerUKey != '' ]] || [[ $pgyerApiKey != '' ]]; then
+				
+					if [[ $pgyerPassword = '' ]]; then
+						echo '发现蒲公英下载密码，未在工程项目的Info.plist配置，配置名称为LEPgyerPassword'
+						read -p "是否现在配置?(y/n)" checkpsw
+						if [[ $checkpsw = "y" ]] ; then 
+							read -p "蒲公英下载密码：" inputpsw
+							pgyerPassword=$inputpsw
+						fi
+					fi
+					
+					read -p "请设置该配置的别名：" name
+					pgyerName=$name 
+					echo $pgyerApiKey,$pgyerUKey,$pgyerPassword,$pgyerName >> ${pgyConfig} 
+					echo ""
+					isCheckPgy=1
+				fi 
+			else
+				isCheckPgy=1
+			fi
+		else
+			isCheckPgy=1
+		fi
+	done 
+fi 
 #指定项目的scheme名称
 scheme=$project
 #指定要打包的配置名
@@ -140,15 +197,15 @@ gym --workspace ${workspace_path} --scheme ${scheme} --clean --configuration ${c
 echo "==================>Finished. Total time: ${SECONDS}s" 
 
 if [[ $pgyerUKey = '' ]] || [[ $pgyerApiKey = '' ]]; then
-	echo "未在工程项目的Info.plist文件中配置LEPgyerApiKey（蒲公英apiKey）及LEPgyerUKey（蒲公英userKey），因此无法上传项目至蒲公英平台"
+	echo "因未设置蒲公英上传配置，已取消上传。您可以在工程项目的Info.plist文件中配置LEPgyerApiKey（蒲公英apiKey）、LEPgyerUKey（蒲公英userKey）及LEPgyerPassword（密码）。"
 else 
 	if [[ -f "$ipa_path" ]]; then
-		uploadToPgyer $ipa_path $pgyerUKey $pgyerApiKey $pgyPassword 
+		uploadToPgyer $ipa_path $pgyerUKey $pgyerApiKey $pgyerPassword 
 		while [[ $result == '' ]]
 		do
 			read -p "上传失败，是否重新上传到蒲公英?(y/n)" reUploadToPgyer
 			if [[ $reUploadToPgyer = "y" ]] ; then
-				uploadToPgyer $ipa_path $pgyerUKey $pgyerApiKey $pgyPassword
+				uploadToPgyer $ipa_path $pgyerUKey $pgyerApiKey $pgyerPassword
 			else
 				echo "本次打包完成，ipa位置: ${ipa_path}" 
 				exit
