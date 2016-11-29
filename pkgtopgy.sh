@@ -11,7 +11,7 @@ uploadToPgyer()
 	echo "ApiKey:  " $3
 	echo "Password:" $4
 	
-	result=$(curl -F "file=@$1" -F "uKey=$2" -F "_api_key=$3" -F "publishRange=2" -F "isPublishToPublic=2" -F "password=$4" 'https://www.pgyer.com/apiv1/app/upload' | json-query data.appShortcutUrl)
+	result=$(curl -F "file=@$1" -F "uKey=$2" -F "_api_key=$3" -F "publishRange=2" -F "isPublishToPublic=2" -F "installType=2" -F "password=$4" 'https://www.pgyer.com/apiv1/app/upload' | json-query data.appShortcutUrl)
 }
 
 tempPath="$(pwd)" 
