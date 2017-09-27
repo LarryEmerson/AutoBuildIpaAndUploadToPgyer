@@ -188,13 +188,18 @@ echo "archive path: ${archive_path}"
 echo "ipa path: ${ipa_path}"
 echo "export method: ${export_method}"
 echo "commit msg: $1"
+
+/usr/libexec/PlistBuddy -c 'Add PgyUpdate string' ${project_infoplist_path}
+/usr/libexec/PlistBuddy -c "Set PgyUpdate 1" ${project_infoplist_path}
+
 #pod update
 #pod update --no-repo-update
 #先清空前一次build
 #gym --workspace ${workspace_path} --scheme ${scheme} --clean --configuration ${configuration} --archive_path ${archive_path} --export_method ${export_method} --output_directory ${output_path} --output_name ${ipa_name}
-gym --workspace ${workspace_path} --scheme ${scheme} --clean --configuration ${configuration} --export_method ${export_method} --output_directory ${output_path} --output_name ${ipa_name}
+fastlane gym --workspace ${workspace_path} --scheme ${scheme} --clean --configuration ${configuration} --export_method ${export_method} --output_directory ${output_path} --output_name ${ipa_name}
 #输出总用时
 echo "==================>Finished. Total time: ${SECONDS}s" 
+/usr/libexec/PlistBuddy -c "Delete PgyUpdate" ${project_infoplist_path}
 
 if [[ $pgyerUKey = '' ]] || [[ $pgyerApiKey = '' ]]; then
 	echo "因未设置蒲公英上传配置，已取消上传。您可以在工程项目的Info.plist文件中配置LEPgyerApiKey（蒲公英apiKey）、LEPgyerUKey（蒲公英userKey）及LEPgyerPassword（密码）。"
