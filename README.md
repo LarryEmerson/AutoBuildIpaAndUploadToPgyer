@@ -1,5 +1,20 @@
 ## iOS自动打包及上传蒲公英
 
+### 20170927 更新记录
+该版本做了2处修改：
+ - 使用了fastlane来运行gym
+ - 编译前添加一个字段PgyUpdate到项目的Info.plist中，编译结束后删除该字段，这样可以保证当前的包Info.plist中含有PgyUpdate字段。之所以加这个字段是为了配合[LEUpdateFromPgyer](https://github.com/LarryEmerson/LEUpdateFromPgyer)(app自动检测版本并更新)
+ ### 必要配置
+ - 项目中确保Info.plist中的“Bundle versions string, short”为“1.0.0”的标准版本号，“Bundle version”为“1”整形
+ - BuildPhases中添加新的Shell
+ 
+ ```
+ buildNumber=$(/usr/libexec/PlistBuddy -c "Print CFBundleVersion" "$INFOPLIST_FILE")
+ buildNumber=$(($buildNumber + 1))
+ /usr/libexec/PlistBuddy -c "Set :CFBundleVersion $buildNumber" "$INFOPLIST_FILE"
+ ```
+ - fastlane 安装： sugo gem install fastlane
+---
 github找了很久自动打包的脚本（shell，python），最后我测试成功的只有2个（1：https://github.com/735344577/build，2：https://github.com/hytzxd/iOS-AutoBuild）。 相比而言1更加简便，2则配置化太发杂和繁琐。最后选择了1，也就是当前的版本作为以后的自动打包及上传的工具。
 
 在作者原版本的基础上，我添加了根目录设置（支持自动识别根目录及外部项目绝对路径设置，这样当前的脚本也可以脱离项目而存在且可以多个项目共享）、蒲公英key的检测与补救输入及上传蒲公英的功能。由于蒲公英支持邮件通知，因此没有添加邮件功能。 
