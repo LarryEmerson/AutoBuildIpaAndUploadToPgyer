@@ -14,7 +14,9 @@
  /usr/libexec/PlistBuddy -c "Set :CFBundleVersion $buildNumber" "$INFOPLIST_FILE"
  ```
  - fastlane 安装： sugo gem install fastlane
+#### 以下是分割线
 ---
+
 github找了很久自动打包的脚本（shell，python），最后我测试成功的只有2个（1：https://github.com/735344577/build，2：https://github.com/hytzxd/iOS-AutoBuild）。 相比而言1更加简便，2则配置化太发杂和繁琐。最后选择了1，也就是当前的版本作为以后的自动打包及上传的工具。
 
 在作者原版本的基础上，我添加了根目录设置（支持自动识别根目录及外部项目绝对路径设置，这样当前的脚本也可以脱离项目而存在且可以多个项目共享）、蒲公英key的检测与补救输入及上传蒲公英的功能。由于蒲公英支持邮件通知，因此没有添加邮件功能。 
