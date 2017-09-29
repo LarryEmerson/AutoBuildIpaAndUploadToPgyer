@@ -13,7 +13,7 @@
  buildNumber=$(($buildNumber + 1))
  /usr/libexec/PlistBuddy -c "Set :CFBundleVersion $buildNumber" "$INFOPLIST_FILE"
  ```
- - fastlane 安装： sugo gem install fastlane
+ - fastlane 安装： sudo gem install fastlane
 #### 以下是分割线
 ---
 

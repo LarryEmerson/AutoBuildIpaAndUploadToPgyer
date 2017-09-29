@@ -190,7 +190,7 @@ echo "export method: ${export_method}"
 echo "commit msg: $1"
 
 /usr/libexec/PlistBuddy -c 'Add PgyUpdate string' ${project_infoplist_path}
-/usr/libexec/PlistBuddy -c "Set PgyUpdate 1" ${project_infoplist_path}
+/usr/libexec/PlistBuddy -c 'Set PgyUpdate @"itms-services://?action=download-manifest&url=https://www.pgyer.com/app/plist/%@"' ${project_infoplist_path}
 
 #pod update
 #pod update --no-repo-update
@@ -200,7 +200,7 @@ fastlane gym --workspace ${workspace_path} --scheme ${scheme} --clean --configur
 #输出总用时
 echo "==================>Finished. Total time: ${SECONDS}s" 
 /usr/libexec/PlistBuddy -c "Delete PgyUpdate" ${project_infoplist_path}
-
+uploadTimeLeft=3
 if [[ $pgyerUKey = '' ]] || [[ $pgyerApiKey = '' ]]; then
 	echo "因未设置蒲公英上传配置，已取消上传。您可以在工程项目的Info.plist文件中配置LEPgyerApiKey（蒲公英apiKey）、LEPgyerUKey（蒲公英userKey）及LEPgyerPassword（密码）。"
 else 
@@ -208,12 +208,17 @@ else
 		uploadToPgyer $ipa_path $pgyerUKey $pgyerApiKey $pgyerPassword 
 		while [[ $result == '' ]]
 		do
-			read -p "上传失败，是否重新上传到蒲公英?(y/n)" reUploadToPgyer
-			if [[ $reUploadToPgyer = "y" ]] ; then
-				uploadToPgyer $ipa_path $pgyerUKey $pgyerApiKey $pgyerPassword
+			$uploadTimeLeft=$uploadTimeLeft-1
+			if [ $uploadTimeLeft <= 0 ] ; then
+				read -p "上传失败，是否重新上传到蒲公英?(y/n)" reUploadToPgyer
+				if [[ $reUploadToPgyer = "y" ]] ; then
+					uploadToPgyer $ipa_path $pgyerUKey $pgyerApiKey $pgyerPassword
+				else
+					echo "本次打包完成，ipa位置: ${ipa_path}" 
+					exit
+				fi
 			else
-				echo "本次打包完成，ipa位置: ${ipa_path}" 
-				exit
+				uploadToPgyer $ipa_path $pgyerUKey $pgyerApiKey $pgyerPassword
 			fi
 		done
 		if [[ $result != '' ]]; then
