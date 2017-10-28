@@ -1,5 +1,7 @@
 ## iOS自动打包及上传蒲公英
-
+### 20171028 
+# 警告
+上传appstore的版本如果使用了配套的库LEUpdateFromPgyer，请去pod删除LEUpdateFromPgyer后打包上传appstore，避免被苹果误杀。亲身经历即使注释了检查新版本的代码，苹果还是拒绝该版本。即便把“itms-services”地址写入PgyUpdate字段（appstore版本没有该字段），还是会提示“uses the itms-services URL scheme to install an app”，无解。
 ### 20170927 更新记录
 该版本做了2处修改：
  - 使用了fastlane来运行gym
