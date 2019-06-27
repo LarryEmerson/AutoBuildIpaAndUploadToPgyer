@@ -69,7 +69,7 @@ if [[ -d "$project_path" ]]; then
 else
 	echo "路径："$project_path
 	echo "当前路径有误，已终止!!!\n"
-	exit
+	# exit
 fi
 SECONDS=0
 #取当前时间字符串添加到文件结尾
@@ -78,11 +78,20 @@ now=$(date +"%Y_%m_%d_%H_%M_%S")
 cd ${project_path}
 project=$(ls | grep xcodeproj | awk -F.xcodeproj '{print $1}')
 #指定项目地址
+isWorkspace = 0
 workspace_path="$project_path/${project}.xcworkspace"
 if [[ ! -d "$workspace_path" ]]; then
 	echo "路径："$workspace_path
-	echo "未找到.xcworkspace文件，已终止!!!"
-	exit
+	echo "未找到.xcworkspace文件，尝试${project}.xcodeproj"
+	# exit
+	workspace_path="$project_path/${project}.xcodeproj"
+	if [[ ! -d "$workspace_path" ]]; then
+		echo "路径："$workspace_path
+		echo "未找到.xcodeproj文件，已终止!!!"
+		# exit
+	fi
+else
+	isWorkspace = 1
 fi
 #工程配置文件路径
 echo "检查蒲公英设置"
@@ -168,9 +177,9 @@ configuration="Release"
 export_method='development'
 #export_method='app-store'
 
-#指定输出路径
-mkdir "${HOME}/Desktop/${project}_${now}"
-output_path="${HOME}/Desktop/${project}_${now}"
+#指定输出路径 _${now}
+mkdir "${HOME}/Desktop/${project}"
+output_path="${HOME}/Desktop/${project}"
 echo $output_path
 #指定输出归档文件地址
 archive_path="$output_path/${project}_${now}.xcarchive"
@@ -196,7 +205,12 @@ echo "commit msg: $1"
 #pod update --no-repo-update
 #先清空前一次build
 #gym --workspace ${workspace_path} --scheme ${scheme} --clean --configuration ${configuration} --archive_path ${archive_path} --export_method ${export_method} --output_directory ${output_path} --output_name ${ipa_name}
-fastlane gym --workspace ${workspace_path} --scheme ${scheme} --clean --configuration ${configuration} --export_method ${export_method} --output_directory ${output_path} --output_name ${ipa_name}
+if [ isWorkspace = 1 ]; then
+	fastlane gym --workspace ${workspace_path} --scheme ${scheme} --clean --configuration ${configuration} --export_method ${export_method} --output_directory ${output_path} --output_name ${ipa_name}
+else
+	fastlane gym --project ${workspace_path} --scheme ${scheme} --clean --configuration ${configuration} --export_method ${export_method} --output_directory ${output_path} --output_name ${ipa_name}
+fi
+# fastlane gym --workspace ${workspace_path} --scheme ${scheme} --clean --configuration ${configuration} --export_method ${export_method} --output_directory ${output_path} --output_name ${ipa_name}
 #输出总用时
 echo "==================>Finished. Total time: ${SECONDS}s" 
 /usr/libexec/PlistBuddy -c "Delete PgyUpdate" ${project_infoplist_path}
@@ -215,7 +229,7 @@ else
 					uploadToPgyer $ipa_path $pgyerUKey $pgyerApiKey $pgyerPassword
 				else
 					echo "本次打包完成，ipa位置: ${ipa_path}" 
-					exit
+					# exit
 				fi
 			else
 				uploadToPgyer $ipa_path $pgyerUKey $pgyerApiKey $pgyerPassword
@@ -228,4 +242,4 @@ else
 	fi
 fi
 echo "本次打包完成"
-exit
+# exit
